@@ -1,4 +1,5 @@
-
+# UPMcompanion
+GUI zum anzeigen und vereinfachen der seriellen Kommunikation mit einem Arduino auf dem UPMmaster läuft
 
 Python Umgebung vorbereiten
 -	„pip install pyserial“ oder mit Python Packages Tab
