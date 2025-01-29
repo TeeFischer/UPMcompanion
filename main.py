@@ -5,13 +5,16 @@ import serial.tools.list_ports
 from collections import deque
 from gui import SerialControlGUI  # eigene gui.py Datei
 from graph import LiveGraph
+import struct
 
 # Seriellen Port und Baudrate definieren
 current_port = None
-BAUD_RATE = 115200
+BAUD_RATE = 250000
 
 # Seriellen Port einmal öffnen
 ser = None
+
+startup = False
 
 is_loads_checked = False
 is_debug_checked = False
@@ -22,6 +25,8 @@ stop_event = threading.Event()
 # Datenpuffer der endlos viele Werte halten kann
 loadcell_data = deque()
 position_data = deque()
+time_data = deque()
+cycle_info = deque()
 
 
 # Funktion zum Erkennen eines verfügbaren Arduinos
@@ -78,24 +83,59 @@ def check_debug():
     return is_debug_checked
 
 
+def extract_load_cell_value_fancy(data_string):
+    if ser.in_waiting >= 12:  # Stelle sicher, dass genügend Daten empfangen wurden
+        data = ser.read(12)  # Lese 12 Bytes (4 Bytes für jedes der 3 Felder)
+
+        # Entpacke die Daten (3 Werte: 2 Floats und 1 Unsigned Long)
+        measurement, position, time = struct.unpack('<ffI', data)  # '<' bedeutet Little-Endian, 'ffI' für float, float, unsigned long
+
+        # Ausgabe der Werte
+        print(f"Messwert: {measurement}, Position: {position}, Zeit: {time}")
+    return None
+
+
 def extract_load_cell_value(data_string):
     """Extrahiert den Load_cell-Wert aus einem String"""
-    if "Load_cell:" in data_string:
+    # print(data_string)
+    if "Load:" in data_string:
         try:
             # Extrahiere den Wert nach "Load_cell: " und konvertiere ihn in eine float-Zahl
-            load_cell_value = float(data_string.split("Load_cell:")[1].split()[0])
-            position_value = float(data_string.split("Position:")[1].split()[0])
-            return load_cell_value, position_value
+            load_cell_value = float(data_string.split("Load:")[1].split()[0])
+            position_value = float(data_string.split("Pos:")[1].split()[0])
+            time_value = float(data_string.split("Time:")[1].split()[0])
+            return load_cell_value, position_value, time_value
+        except Exception as e:
+            print(f"Unerwarteter Fehler in extract_load_cell_value: {e}")  # Allgemeiner Fehler
+            return None
+    return None
+
+
+def extract_cycle_value(data_string):
+    """Extrahiert den Load_cell-Wert aus einem String"""
+    # (data_string)
+    if "Press cycle:" in data_string:
+        try:
+            # Extrahiere die Werte
+            cycle_number = float(data_string.split("Press cycle:")[1].split(",")[0])
+            time_value = float(data_string.split("Time:")[1].split()[0])
+            if "Slow" in data_string:
+                cycle_speed = "Slow"
+            else:
+                cycle_speed = "Fast"
+            return cycle_number, cycle_speed, time_value
         except ValueError:
+            print("Cycle extract: Value Error!")
             # Wenn der Wert nicht umgewandelt werden kann, gib None zurück
             return None
+    print("Cycle Extraxt: not identified!")
     return None
 
 
 # Funktion zum Empfangen von Daten vom Arduino, diese Funktion ist eine Endlosschleife, die daher in einem eigenen
 # Thread laufen sollte
 def read_serial():
-    global ser
+    global ser, startup
     try:
         if ser is None or not ser.is_open:  # wenn noch keine Serielle verbindung besteht
             ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
@@ -103,16 +143,43 @@ def read_serial():
             arduino_connected(True)
 
             if ser.in_waiting > 0:
-                incoming_data = ser.readline().decode('utf-8',
-                                                      errors='ignore').strip()  # Daten empfangen und dekodieren
+                incoming_data = ser.read(ser.in_waiting)  # Lies alle verfügbaren Daten
 
-                if incoming_data.startswith("Load_cell:"):
-                    # Der String beginnt mit "Load_cell:"
+                # Versuch, die Daten als Text zu dekodieren
+                try:
+                    decoded_data = incoming_data.decode('utf-8').strip()  # Versuche die Daten als Text zu dekodieren
+                    print(f"Empfangene Textdaten: {decoded_data}")
+                except UnicodeDecodeError:
+                    # Wenn ein Fehler beim Dekodieren auftritt, handelt es sich wahrscheinlich um binäre Daten
+                    print("Empfangene Binärdaten: ", incoming_data)
+
+                    # Wenn du weißt, dass du z. B. 12 Bytes für die Binärdaten erwartest, entpacke sie
+                    if len(incoming_data) == 12:
+                        measurement, position, _time = struct.unpack('<ffI', incoming_data)
+                        print(f"Messwert: {measurement}, Position: {position}, Zeit: {_time}")
+
+                        loadcell_data.append(measurement)  # Neue Daten hinzufügen
+                        position_data.append(position)  # Neue Daten hinzufügen
+                        time_data.append(_time)  # Neue Daten hinzufügen
+                    else:
+                        print("Unbekannte Binärdatenlänge empfangen.")
+
+                # this catches the previously buffered communication which is not from this Arduino instance
+                if not startup:
                     try:
-                        values = extract_load_cell_value(incoming_data)
+                        if decoded_data.startswith("Starting..."):
+                            startup = True
+                    except Exception as e:
+                        print(e)
+
+                elif decoded_data.startswith("Load:"):
+                    # Der String beginnt mit "Load:"
+                    try:
+                        values = extract_load_cell_value(decoded_data)
                         if values is not None:
                             loadcell_data.append(values[0])  # Neue Daten hinzufügen
                             position_data.append(values[1])  # Neue Daten hinzufügen
+                            time_data.append(values[2])  # Neue Daten hinzufügen
                     except ValueError:
                         print("Error: Load Data corrupted")
                         pass  # Wenn keine gültige Zahl empfangen wurde, überspringen
@@ -121,13 +188,16 @@ def read_serial():
                     if is_loads_checked:
                         # gui.display_incoming_data(incoming_data) # diese Zeile wurde ersetzt durch gui.roo.after...,
                         # weil es sonst zu RuntimeErrors kommt
-                        gui.root.after(0, gui.display_incoming_data, incoming_data)
-                elif incoming_data.startswith("Debug:"):
+                        gui.root.after(0, gui.display_incoming_data, decoded_data)
+                elif decoded_data.startswith("Debug:"):
                     gui.root.after(0, lambda: globals().update({"is_debug_checked": gui.debug.get() == "1"}))
                     if is_debug_checked:
-                        gui.root.after(0, gui.display_incoming_data, incoming_data)
-                elif incoming_data:
-                    gui.root.after(0, gui.display_incoming_data, incoming_data)
+                        gui.root.after(0, gui.display_incoming_data, decoded_data)
+                elif decoded_data.startswith("Press cycle:"):
+                    cycle_info.append(extract_cycle_value(decoded_data))
+                    gui.root.after(0, gui.display_incoming_data, decoded_data)
+                elif decoded_data:
+                    gui.root.after(0, gui.display_incoming_data, decoded_data)
             time.sleep(0.01)  # Kurze Pause, damit GUI responsive bleibt
     except serial.SerialException as e:
         arduino_connected(False, e)
@@ -166,7 +236,8 @@ def arduino_connected(connected, exception=None):
 livePlot = LiveGraph("Zeit", "Kraft [in gramm]")
 
 # GUI erstellen
-gui = SerialControlGUI(send_command, try_connecting, current_port, list_com_ports, livePlot, loadcell_data, position_data)
+gui = SerialControlGUI(send_command, try_connecting, current_port, list_com_ports, livePlot, loadcell_data,
+                       position_data, time_data, cycle_info)
 
 # Starten des Threads für die serielle Kommunikation
 SERIAL_PORT = find_com_port()

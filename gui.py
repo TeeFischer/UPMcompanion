@@ -5,12 +5,15 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 class SerialControlGUI:
-    def __init__(self, send_command, try_connecting, current_port, list_com_ports, plot, load_data, pos_data):
+    def __init__(self, send_command, try_connecting, current_port, list_com_ports, plot, load_data, pos_data, time_data
+                 , cycle_info):
         self.plot = plot
         self.figure = plot.fig
         self.ax = plot.ax
         self.data = load_data
         self.pos_data = pos_data
+        self.time_data = time_data
+        self.cycle_info = cycle_info
         self.send_command = send_command
 
         self.last_data = None    # speichert die zuletzt angezeigt Zeile, um Dopplungen zu erkennen
@@ -208,6 +211,36 @@ class SerialControlGUI:
             self.root.after(delay, lambda: self.update_graph(delay, self.slider_value))  # Alle 10 ms erneut aufrufen
 
     def export_data(self):
+        print("Export gestartet")
+
+        # Neues Toplevel-Fenster erstellen
+        export_window = tk.Toplevel(self.root)
+        export_window.title("Daten exportieren")
+
+        # Label und Optionen für die Auswahl der zu exportierenden Daten
+        label = tk.Label(export_window, text="Wählen Sie die Daten aus, die exportiert werden sollen:")
+        label.pack(padx=10, pady=10)
+
+        # Funktion für den Button
+        def on_export_button_click():
+            result = self.save_as_csv()  # Export ausführen und Rückmeldung erhalten
+
+            # Erfolgs- oder Fehlermeldung
+            if "Export erfolgreich" in result:
+                success_label = tk.Label(export_window, text=result, fg="green")
+                success_label.pack(padx=10, pady=10)
+
+                # Fenster nach einer kurzen Verzögerung schließen
+                export_window.after(2000, export_window.destroy)  # Schließt das Fenster nach 2 Sekunden
+            else:
+                error_label = tk.Label(export_window, text=result, fg="red")
+                error_label.pack(padx=10, pady=10)
+
+        # Button zum Starten des Exports
+        save_button = tk.Button(export_window, text="CSV exportieren", command=on_export_button_click)
+        save_button.pack(padx=10, pady=10)
+
+    def export_data_old(self):
         print("Export started")
         # Neues Toplevel-Fenster erstellen
         export_window = tk.Toplevel(self.root)
@@ -222,21 +255,41 @@ class SerialControlGUI:
         save_button = tk.Button(export_window, text="CSV exportieren", command=self.save_as_csv)
         save_button.pack(padx=10, pady=10)
 
-    # Funktion zum Speichern der Daten als CSV
+    # Funktion zum Speichern der Daten als CSV, gibt zusätzlich eine Erfolg- oder Fehlermeldung zurück
     def save_as_csv(self):
-        # Kopiere die deques in Listen, um sicherzustellen, dass die originalen deques nicht verändert werden
-        pos_data_list = list(self.pos_data)
-        data_list = list(self.data)
+        try:
+            # Kopiere die deques in Listen, um sicherzustellen, dass die originalen deques nicht verändert werden
+            pos_data_list = list(self.pos_data)
+            data_list = list(self.data)
+            time_list = list(self.time_data)
+            cycle_list = list(self.cycle_info)
 
-        save_data = zip(pos_data_list, data_list)
-        # Dialog zum Speichern der Datei öffnen
-        file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
+            save_data = list(zip(time_list, pos_data_list, data_list))  # Zusammenfügen der Daten
 
-        if file_path:
-            # CSV-Datei speichern
-            with open(file_path, mode='w', newline='', encoding='utf-8') as file:
-                writer = csv.writer(file)
-                writer.writerow(["Weg [in mm]", "Kraft [in gramms]"])  # Header hinzufügen
-                for row in save_data:
-                    writer.writerow(row)
-            print(f"Datei gespeichert unter {file_path}")
+            # Dialog zum Speichern der Datei öffnen
+            file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
+
+            if file_path:
+                # CSV-Datei speichern
+                with open(file_path, mode='w', newline='', encoding='utf-8') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(["Zeit [in ms]", "Weg [in mm]", "Kraft [in gramms]", "Info"])  # Header hinzufügen
+
+                    cycle_index = 0
+                    for row in save_data:
+                        time_value = row[0]
+                        info = ' '  # Standardwert (leerer Platz)
+
+                        while cycle_index < len(cycle_list) and cycle_list[cycle_index][2] <= time_value:
+                            cycle_index += 1
+
+                        if cycle_index > 0:
+                            info = f"Cycle {int(cycle_list[cycle_index - 1][0])}: {cycle_list[cycle_index - 1][1]}"
+
+                        writer.writerow(list(row) + [info])
+
+                return "Export erfolgreich!"  # Erfolgreich abgeschlossen
+            else:
+                return "Export abgebrochen."  # Falls der Benutzer den Dialog abbricht
+        except Exception as e:
+            return f"Fehler: {str(e)}"  # Gibt die Fehlermeldung zurück
