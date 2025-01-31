@@ -148,10 +148,10 @@ def read_serial():
                 # Versuch, die Daten als Text zu dekodieren
                 try:
                     decoded_data = incoming_data.decode('utf-8').strip()  # Versuche die Daten als Text zu dekodieren
-                    print(f"Empfangene Textdaten: {decoded_data}")
+                    # print(f"Empfangene Textdaten: {decoded_data}")
                 except UnicodeDecodeError:
                     # Wenn ein Fehler beim Dekodieren auftritt, handelt es sich wahrscheinlich um binäre Daten
-                    print("Empfangene Binärdaten: ", incoming_data)
+                    # print("Empfangene Binärdaten: ", incoming_data)
 
                     # Wenn du weißt, dass du z. B. 12 Bytes für die Binärdaten erwartest, entpacke sie
                     if len(incoming_data) == 12:
