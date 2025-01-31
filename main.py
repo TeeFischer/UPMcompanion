@@ -9,7 +9,7 @@ import struct
 
 # Seriellen Port und Baudrate definieren
 current_port = None
-BAUD_RATE = 250000
+BAUD_RATE = 115200
 
 # Seriellen Port einmal öffnen
 ser = None
@@ -126,15 +126,13 @@ def read_serial():
     global ser, startup
     try:
         if ser is None or not ser.is_open:  # wenn noch keine Serielle verbindung besteht
-            ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+            ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=None)
         while not stop_event.is_set():
             arduino_connected(True)
 
             if ser.in_waiting > 0:
-                incoming_data = ser.read(ser.in_waiting)  # Lies alle verfügbaren Daten
-
-                # Versuch, die Daten als Text zu dekodieren
-                decoded_data = incoming_data.decode('utf-8').strip()
+                decoded_data = ser.readline().decode('utf-8').strip()  # Daten empfangen und dekodieren
+                print(f"Empfangene Daten: {decoded_data}")  # Debug-Ausgabe
 
                 # this catches the previously buffered communication which is not from this Arduino instance
                 if not startup:
@@ -144,7 +142,7 @@ def read_serial():
                     except Exception as e:
                         print(e)
 
-                elif decoded_data.startswith("Load:"):
+                elif decoded_data.startswith("Load"):
                     # Der String beginnt mit "Load:"
                     try:
                         values = extract_load_cell_value(decoded_data)
