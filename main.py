@@ -83,18 +83,6 @@ def check_debug():
     return is_debug_checked
 
 
-def extract_load_cell_value_fancy(data_string):
-    if ser.in_waiting >= 12:  # Stelle sicher, dass genügend Daten empfangen wurden
-        data = ser.read(12)  # Lese 12 Bytes (4 Bytes für jedes der 3 Felder)
-
-        # Entpacke die Daten (3 Werte: 2 Floats und 1 Unsigned Long)
-        measurement, position, time = struct.unpack('<ffI', data)  # '<' bedeutet Little-Endian, 'ffI' für float, float, unsigned long
-
-        # Ausgabe der Werte
-        print(f"Messwert: {measurement}, Position: {position}, Zeit: {time}")
-    return None
-
-
 def extract_load_cell_value(data_string):
     """Extrahiert den Load_cell-Wert aus einem String"""
     # print(data_string)
@@ -146,23 +134,7 @@ def read_serial():
                 incoming_data = ser.read(ser.in_waiting)  # Lies alle verfügbaren Daten
 
                 # Versuch, die Daten als Text zu dekodieren
-                try:
-                    decoded_data = incoming_data.decode('utf-8').strip()  # Versuche die Daten als Text zu dekodieren
-                    print(f"Empfangene Textdaten: {decoded_data}")
-                except UnicodeDecodeError:
-                    # Wenn ein Fehler beim Dekodieren auftritt, handelt es sich wahrscheinlich um binäre Daten
-                    print("Empfangene Binärdaten: ", incoming_data)
-
-                    # Wenn du weißt, dass du z. B. 12 Bytes für die Binärdaten erwartest, entpacke sie
-                    if len(incoming_data) == 12:
-                        measurement, position, _time = struct.unpack('<ffI', incoming_data)
-                        print(f"Messwert: {measurement}, Position: {position}, Zeit: {_time}")
-
-                        loadcell_data.append(measurement)  # Neue Daten hinzufügen
-                        position_data.append(position)  # Neue Daten hinzufügen
-                        time_data.append(_time)  # Neue Daten hinzufügen
-                    else:
-                        print("Unbekannte Binärdatenlänge empfangen.")
+                decoded_data = incoming_data.decode('utf-8').strip()
 
                 # this catches the previously buffered communication which is not from this Arduino instance
                 if not startup:
