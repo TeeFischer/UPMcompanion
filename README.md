@@ -9,7 +9,9 @@ Python Umgebung vorbereiten
 Weitere Hinweise
 -	Sorge dafür, dass der COM-Port nicht von einem anderen Programm genutzt wird  
   o	Und auch nur eine Serielle Port instanz im Code genutzt wird (deshalb global ser)
-
+- zum export in exe
+  - pip install pyinstaller
+  - pyinstaller --onefile main.py
 
 TODO: (bzw. Bugs)
 -	Daten Export, Datensatz auswählbar gestalten
