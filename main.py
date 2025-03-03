@@ -203,7 +203,7 @@ def arduino_connected(connected, exception=None):
 
 
 # Live Graphen erstellen
-livePlot = LiveGraph("Zeit", "Kraft [in gramm]")
+livePlot = LiveGraph("Zeit", "Temperatur [in °C]")
 
 # GUI erstellen
 gui = SerialControlGUI(send_command, try_connecting, current_port, list_com_ports, livePlot, loadcell_data,

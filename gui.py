@@ -62,7 +62,7 @@ class SerialControlGUI:
 
         # Erstellen von Checkbuttons
         self.checkbutton1 = tk.Checkbutton(frame_printout, text="Duplikate", variable=self.duplikats)
-        self.checkbutton2 = tk.Checkbutton(frame_printout, text="WaagenWerte", variable=self.loads)
+        self.checkbutton2 = tk.Checkbutton(frame_printout, text="TempWerte", variable=self.loads)
         self.checkbutton3 = tk.Checkbutton(frame_printout, text="Debug", variable=self.debug)
 
         # Eingabefeld für benutzerdefinierten Befehl
@@ -79,13 +79,13 @@ class SerialControlGUI:
         frame_buttons = tk.Frame(frame_left)
 
         # Buttons zum Senden von Befehlen
-        button_home = tk.Button(frame_buttons, text="Maschine Homen", command=lambda: self.send_command('h'))
-        button_cal = tk.Button(frame_buttons, text="Waage kalibrieren", command=lambda: self.send_command('r'))
-        button_tare = tk.Button(frame_buttons, text="Waage tarieren", command=lambda: self.send_command('t'))
-        button_scale = tk.Button(frame_buttons, text="Waage auslesen", command=lambda: self.send_command('a'))
-        button_press = tk.Button(frame_buttons, text="Pressversuch (Weggest.)", command=lambda: self.send_command('p'))
-        button_rel = tk.Button(frame_buttons, text="Bewege relativ um X", command=lambda: self.send_command('m'))
-        button_fast = tk.Button(frame_buttons, text="Absolute Bewegung zu X", command=lambda: self.send_command('f'))
+        button_home = tk.Button(frame_buttons, text="h", command=lambda: self.send_command('h'))
+        button_cal = tk.Button(frame_buttons, text="r", command=lambda: self.send_command('r'))
+        button_tare = tk.Button(frame_buttons, text="PID AutoTune", command=lambda: self.send_command('t'))
+        button_scale = tk.Button(frame_buttons, text="Start PID", command=lambda: self.send_command('a'))
+        button_press = tk.Button(frame_buttons, text="Stop PID", command=lambda: self.send_command('s'))
+        button_rel = tk.Button(frame_buttons, text="m", command=lambda: self.send_command('m'))
+        button_fast = tk.Button(frame_buttons, text="f", command=lambda: self.send_command('f'))
 
         # Erstelle einen Canvas für den matplotlib-Plot
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.root)  # matplotlib-Plot in Tkinter Canvas einbinden
@@ -199,7 +199,7 @@ class SerialControlGUI:
         if spanne == 100:
             plot_data = self.data
         else:
-            plot_range = spanne*10*60  #eingestellteSpanne*10hz Messfrequenz*60 Sekunden
+            plot_range = spanne*4*60  #eingestellteSpanne*4hz Messfrequenz*60 Sekunden
             # Wenn weniger als plot_range Werte vorhanden sind, wähle nur so viele wie möglich
             if len(self.data) < plot_range:
                 plot_range = len(self.data)
