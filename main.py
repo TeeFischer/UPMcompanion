@@ -23,10 +23,10 @@ is_debug_checked = False
 stop_event = threading.Event()
 
 # Datenpuffer der endlos viele Werte halten kann
-loadcell_data = deque()
-position_data = deque()
+t1_data = deque()
 time_data = deque()
-cycle_info = deque()
+pwm_data = deque()
+# cycle_info = deque()
 
 
 # Funktion zum Erkennen eines verfügbaren Arduinos
@@ -83,40 +83,19 @@ def check_debug():
     return is_debug_checked
 
 
-def extract_load_cell_value(data_string):
-    """Extrahiert den Load_cell-Wert aus einem String"""
+def extract_temp_values(data_string):
+    """Extrahiert die Heizelement-Werte aus einem String"""
     # print(data_string)
     if "Load:" in data_string:
         try:
             # Extrahiere den Wert nach "Load_cell: " und konvertiere ihn in eine float-Zahl
-            load_cell_value = float(data_string.split("Load:")[1].split()[0])
-            position_value = float(data_string.split("Pos:")[1].split()[0])
+            t1_value = float(data_string.split("T1:")[1].split()[0])
             time_value = float(data_string.split("Time:")[1].split()[0])
-            return load_cell_value, position_value, time_value
+            pwm_value = float(data_string.split("PWM:")[1].split()[0])
+            return t1_value, pwm_value, time_value
         except Exception as e:
-            print(f"Unerwarteter Fehler in extract_load_cell_value: {e}")  # Allgemeiner Fehler
+            print(f"Unerwarteter Fehler in extract_temp_values: {e}")  # Allgemeiner Fehler
             return None
-    return None
-
-
-def extract_cycle_value(data_string):
-    """Extrahiert den Load_cell-Wert aus einem String"""
-    # (data_string)
-    if "Press cycle:" in data_string:
-        try:
-            # Extrahiere die Werte
-            cycle_number = float(data_string.split("Press cycle:")[1].split(",")[0])
-            time_value = float(data_string.split("Time:")[1].split()[0])
-            if "Slow" in data_string:
-                cycle_speed = "Slow"
-            else:
-                cycle_speed = "Fast"
-            return cycle_number, cycle_speed, time_value
-        except ValueError:
-            print("Cycle extract: Value Error!")
-            # Wenn der Wert nicht umgewandelt werden kann, gib None zurück
-            return None
-    print("Cycle Extraxt: not identified!")
     return None
 
 
@@ -142,16 +121,16 @@ def read_serial():
                     except Exception as e:
                         print(e)
 
-                elif decoded_data.startswith("Load"):
+                elif decoded_data.startswith("T1"):
                     # Der String beginnt mit "Load:"
                     try:
-                        values = extract_load_cell_value(decoded_data)
+                        values = extract_temp_values(decoded_data)
                         if values is not None:
-                            loadcell_data.append(values[0])  # Neue Daten hinzufügen
-                            position_data.append(values[1])  # Neue Daten hinzufügen
+                            t1_data.append(values[0])  # Neue Daten hinzufügen
+                            pwm_data.append(values[1])  # Neue Daten hinzufügen
                             time_data.append(values[2])  # Neue Daten hinzufügen
                     except ValueError:
-                        print("Error: Load Data corrupted")
+                        print("Error: Temp Data corrupted")
                         pass  # Wenn keine gültige Zahl empfangen wurde, überspringen
 
                     gui.root.after(0, check_loads)
@@ -163,9 +142,6 @@ def read_serial():
                     gui.root.after(0, lambda: globals().update({"is_debug_checked": gui.debug.get() == "1"}))
                     if is_debug_checked:
                         gui.root.after(0, gui.display_incoming_data, decoded_data)
-                elif decoded_data.startswith("Press cycle:"):
-                    cycle_info.append(extract_cycle_value(decoded_data))
-                    gui.root.after(0, gui.display_incoming_data, decoded_data)
                 elif decoded_data:
                     gui.root.after(0, gui.display_incoming_data, decoded_data)
             time.sleep(0.01)  # Kurze Pause, damit GUI responsive bleibt
@@ -206,8 +182,8 @@ def arduino_connected(connected, exception=None):
 livePlot = LiveGraph("Zeit", "Temperatur [in °C]")
 
 # GUI erstellen
-gui = SerialControlGUI(send_command, try_connecting, current_port, list_com_ports, livePlot, loadcell_data,
-                       position_data, time_data, cycle_info)
+gui = SerialControlGUI(send_command, try_connecting, current_port, list_com_ports, livePlot, t1_data,
+                       time_data, pwm_data)
 
 # Starten des Threads für die serielle Kommunikation
 SERIAL_PORT = find_com_port()

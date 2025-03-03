@@ -5,15 +5,13 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 class SerialControlGUI:
-    def __init__(self, send_command, try_connecting, current_port, list_com_ports, plot, load_data, pos_data, time_data
-                 , cycle_info):
+    def __init__(self, send_command, try_connecting, current_port, list_com_ports, plot, t1_data, time_data, pwm_data):
         self.plot = plot
         self.figure = plot.fig
         self.ax = plot.ax
-        self.data = load_data
-        self.pos_data = pos_data
+        self.t1_data = t1_data
         self.time_data = time_data
-        self.cycle_info = cycle_info
+        self.pwm_data = pwm_data
         self.send_command = send_command
 
         self.last_data = None    # speichert die zuletzt angezeigt Zeile, um Dopplungen zu erkennen
@@ -197,15 +195,17 @@ class SerialControlGUI:
     # Funktion zum Aktualisieren des Graphen
     def update_graph(self, delay=0, spanne=100):
         if spanne == 100:
-            plot_data = self.data
+            plot_data_t1  = self.t1_data
+            plot_data_pwm = self.pwm_data
         else:
             plot_range = spanne*4*60  #eingestellteSpanne*4hz Messfrequenz*60 Sekunden
             # Wenn weniger als plot_range Werte vorhanden sind, wähle nur so viele wie möglich
-            if len(self.data) < plot_range:
-                plot_range = len(self.data)
-            plot_data = list(self.data)[-plot_range:]
+            if len(self.t1_data) < plot_range:
+                plot_range = len(self.t1_data)
+            plot_data_t1  = list(self.t1_data)[-plot_range:]
+            plot_data_pwm = list(self.pwm_data)[-plot_range:]
 
-        self.plot.update(plot_data)  # Plottet die ausgewählten Daten
+        self.plot.update([plot_data_t1, plot_data_pwm])  # Plottet die ausgewählten Daten
         self.canvas.draw()           # Canvas aktualisieren
         if not delay == 0:
             self.root.after(delay, lambda: self.update_graph(delay, self.slider_value))  # Alle 10 ms erneut aufrufen
@@ -259,12 +259,12 @@ class SerialControlGUI:
     def save_as_csv(self):
         try:
             # Kopiere die deques in Listen, um sicherzustellen, dass die originalen deques nicht verändert werden
-            pos_data_list = list(self.pos_data)
-            data_list = list(self.data)
             time_list = list(self.time_data)
-            cycle_list = list(self.cycle_info)
+            t1_list = list(self.t1_data)
+            pwm_list = list(self.pwm_data)
+            # cycle_list = list(self.cycle_info)
 
-            save_data = list(zip(time_list, pos_data_list, data_list))  # Zusammenfügen der Daten
+            save_data = list(zip(time_list, t1_list, pwm_list))  # Zusammenfügen der Daten
 
             # Dialog zum Speichern der Datei öffnen
             file_path = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV-Dateien", "*.csv")])
@@ -273,18 +273,12 @@ class SerialControlGUI:
                 # CSV-Datei speichern
                 with open(file_path, mode='w', newline='', encoding='utf-8') as file:
                     writer = csv.writer(file)
-                    writer.writerow(["Zeit [in ms]", "Weg [in mm]", "Kraft [in gramms]", "Info"])  # Header hinzufügen
+                    writer.writerow(["Zeit [in ms]", "Temp1 [in °C]", "PWM [0-255]", "Info"])  # Header hinzufügen
 
                     cycle_index = 0
                     for row in save_data:
                         time_value = row[0]
                         info = ' '  # Standardwert (leerer Platz)
-
-                        while cycle_index < len(cycle_list) and cycle_list[cycle_index][2] <= time_value:
-                            cycle_index += 1
-
-                        if cycle_index > 0:
-                            info = f"Cycle {int(cycle_list[cycle_index - 1][0])}: {cycle_list[cycle_index - 1][1]}"
 
                         writer.writerow(list(row) + [info])
 
