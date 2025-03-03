@@ -78,7 +78,7 @@ class SerialControlGUI:
 
         # Buttons zum Senden von Befehlen
         button_home = tk.Button(frame_buttons, text="h", command=lambda: self.send_command('h'))
-        button_cal = tk.Button(frame_buttons, text="r", command=lambda: self.send_command('r'))
+        button_cal = tk.Button(frame_buttons, text="Set Target", command=lambda: self.send_command('z'))
         button_tare = tk.Button(frame_buttons, text="PID AutoTune", command=lambda: self.send_command('t'))
         button_scale = tk.Button(frame_buttons, text="Start PID", command=lambda: self.send_command('a'))
         button_press = tk.Button(frame_buttons, text="Stop PID", command=lambda: self.send_command('s'))
