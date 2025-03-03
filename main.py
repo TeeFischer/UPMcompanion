@@ -86,7 +86,7 @@ def check_debug():
 def extract_temp_values(data_string):
     """Extrahiert die Heizelement-Werte aus einem String"""
     # print(data_string)
-    if "Load:" in data_string:
+    if "T1:" in data_string:
         try:
             # Extrahiere den Wert nach "Load_cell: " und konvertiere ihn in eine float-Zahl
             t1_value = float(data_string.split("T1:")[1].split()[0])

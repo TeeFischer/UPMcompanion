@@ -205,7 +205,7 @@ class SerialControlGUI:
             plot_data_t1  = list(self.t1_data)[-plot_range:]
             plot_data_pwm = list(self.pwm_data)[-plot_range:]
 
-        self.plot.update([plot_data_t1, plot_data_pwm])  # Plottet die ausgewählten Daten
+        self.plot.update2([plot_data_t1, plot_data_pwm])  # Plottet die ausgewählten Daten
         self.canvas.draw()           # Canvas aktualisieren
         if not delay == 0:
             self.root.after(delay, lambda: self.update_graph(delay, self.slider_value))  # Alle 10 ms erneut aufrufen
