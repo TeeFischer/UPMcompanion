@@ -110,7 +110,8 @@ def read_serial():
             arduino_connected(True)
 
             if ser.in_waiting > 0:
-                decoded_data = ser.readline().decode('utf-8').strip()  # Daten empfangen und dekodieren
+                decoded_data = ser.readline().decode('utf-8',
+                                                      errors='ignore').strip()  # Daten empfangen und dekodieren
                 print(f"Empfangene Daten: {decoded_data}")  # Debug-Ausgabe
 
                 # this catches the previously buffered communication which is not from this Arduino instance
