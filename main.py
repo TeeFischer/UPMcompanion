@@ -24,6 +24,8 @@ stop_event = threading.Event()
 
 # Datenpuffer der endlos viele Werte halten kann
 t1_data = deque()
+t2_data = deque()
+t3_data = deque()
 time_data = deque()
 pwm_data = deque()
 # cycle_info = deque()
@@ -90,9 +92,11 @@ def extract_temp_values(data_string):
         try:
             # Extrahiere den Wert nach "Load_cell: " und konvertiere ihn in eine float-Zahl
             t1_value = float(data_string.split("T1:")[1].split()[0])
+            t2_value = float(data_string.split("T2:")[1].split()[0])
+            t3_value = float(data_string.split("T3:")[1].split()[0])
             time_value = float(data_string.split("Time:")[1].split()[0])
             pwm_value = float(data_string.split("PWM:")[1].split()[0])
-            return t1_value, pwm_value, time_value
+            return t1_value, t2_value, t3_value, pwm_value, time_value
         except Exception as e:
             print(f"Unerwarteter Fehler in extract_temp_values: {e}")  # Allgemeiner Fehler
             return None
@@ -128,8 +132,10 @@ def read_serial():
                         values = extract_temp_values(decoded_data)
                         if values is not None:
                             t1_data.append(values[0])  # Neue Daten hinzufügen
-                            pwm_data.append(values[1])  # Neue Daten hinzufügen
-                            time_data.append(values[2])  # Neue Daten hinzufügen
+                            t2_data.append(values[1])
+                            t3_data.append(values[2])
+                            pwm_data.append(values[3])  # Neue Daten hinzufügen
+                            time_data.append(values[4])  # Neue Daten hinzufügen
                     except ValueError:
                         print("Error: Temp Data corrupted")
                         pass  # Wenn keine gültige Zahl empfangen wurde, überspringen
@@ -184,7 +190,7 @@ livePlot = LiveGraph("Zeit", "Temperatur [in °C]")
 
 # GUI erstellen
 gui = SerialControlGUI(send_command, try_connecting, current_port, list_com_ports, livePlot, t1_data,
-                       time_data, pwm_data)
+                       t2_data, t3_data, time_data, pwm_data)
 
 # Starten des Threads für die serielle Kommunikation
 SERIAL_PORT = find_com_port()
