@@ -3,16 +3,15 @@ import threading
 import time
 import serial.tools.list_ports
 from collections import deque
-from gui import SerialControlGUI  # eigene gui.py Datei
-from graph import LiveGraph
 import struct
 
-# Seriellen Port und Baudrate definieren
-current_port = None
-BAUD_RATE = 115200
+from gui import SerialControlGUI  # eigene gui.py Datei
+from graph import LiveGraph
 
 # Seriellen Port einmal öffnen
 ser = None
+current_port = None
+BAUD_RATE = 115200
 
 startup = False
 
@@ -68,16 +67,18 @@ def send_command(command):
 
 
 def check_loads():
-    global is_loads_checked
     """Hilfsfunktion, die den Wert von gui.loads.get() sicher im Haupt-Thread abruft."""
+    global is_loads_checked
+    
     # print(gui.loads.get())
     is_loads_checked = gui.loads.get() == "1"
     return is_loads_checked
 
 
 def check_debug():
+    """Hilfsfunktion, die den Wert von gui.debug.get() sicher im Haupt-Thread abruft."""
     global is_debug_checked
-    """Hilfsfunktion, die den Wert von gui.loads.get() sicher im Haupt-Thread abruft."""
+    
     # print(gui.loads.get())
     is_debug_checked = gui.debug.get() == "1"
     return is_debug_checked
@@ -100,7 +101,7 @@ def extract_load_cell_value(data_string):
 
 
 def extract_cycle_value(data_string):
-    """Extrahiert den Load_cell-Wert aus einem String"""
+    """Extrahiert die Zyklus-Info aus einem String"""
     # (data_string)
     if "Press cycle:" in data_string:
         try:
