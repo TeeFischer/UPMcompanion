@@ -11,7 +11,8 @@ Weitere Hinweise
   o	Und auch nur eine Serielle Port instanz im Code genutzt wird (deshalb global ser)
 - zum export in exe
   - pip install pyinstaller
-  - pyinstaller --onefile --windowed main.py
+  - pyinstaller --onefile --windowed --version-file=version.txt main.py
+  (version file was added because SecuretySoftware was unhappy --clean --noupx can help as well)
 
 TODO: (bzw. Bugs)
 -	Daten Export, Datensatz auswählbar gestalten
