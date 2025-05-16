@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog
 import csv
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import sys
 
 
 class SerialControlGUI:
@@ -22,7 +23,14 @@ class SerialControlGUI:
 
         self.connection_status = ""  # Variable, um den aktuellen Verbindungsstatus zu speichern
 
+        def on_closing():
+            print("Fenster wird geschlossen. Beende das Skript...")
+            sys.exit()  # Beendet das Skript
+
         self.root = tk.Tk()
+
+        # if window is closed, end programm execution
+        self.root.protocol("WM_DELETE_WINDOW", on_closing)
 
         # Alle GUI-Elemente jetzt innerhalb der __init__ Methode erstellen
 
@@ -80,6 +88,7 @@ class SerialControlGUI:
 
         # Buttons zum Senden von Befehlen
         button_home = tk.Button(frame_buttons, text="Maschine Homen", command=lambda: self.send_command('h'))
+        button_clEstop = tk.Button(frame_buttons, text="Lösche E-Stop", command=lambda: self.send_command('e'))
         button_cal = tk.Button(frame_buttons, text="Waage kalibrieren", command=lambda: self.send_command('r'))
         button_tare = tk.Button(frame_buttons, text="Waage tarieren", command=lambda: self.send_command('t'))
         button_scale = tk.Button(frame_buttons, text="Waage auslesen", command=lambda: self.send_command('a'))
@@ -124,6 +133,7 @@ class SerialControlGUI:
 
         frame_buttons.pack(pady=5)
         button_home.grid(row=0, column=0, padx=10)
+        button_clEstop.grid(row=0, column=1, padx=10)
         button_cal.grid(row=1, column=0, padx=10)
         button_tare.grid(row=1, column=1, padx=10)
         button_scale.grid(row=2, column=0, padx=10)
