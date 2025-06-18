@@ -12,6 +12,7 @@ from graph import LiveGraph
 ser = None
 current_port = None
 BAUD_RATE = 115200
+backup_port = 'COM10'
 
 startup = False
 
@@ -37,7 +38,8 @@ def find_com_port():
         if 'Arduino' in port.description:  # Falls der Arduino im Gerätenamen auftaucht
             current_port = port.device
             return current_port  # Gibt den COM-Port zurück
-    return None  # Falls kein passender Port gefunden wurde
+    print(f"Fallback to {backup_port}")
+    return backup_port  # Falls kein passender Port gefunden wurde
 
 
 # Funktion zum Auflisten der verfügbaren COM-Ports
