@@ -272,7 +272,9 @@ class SerialControlGUI:
             pos_data_list = list(self.pos_data)
             data_list = list(self.data)
             time_list = list(self.time_data)
-            cycle_list = list(self.cycle_info)
+            cycle_list = list(self.cycle_info)  # cycle_number, cycle_speed, time_value, temperature_value, humidity_value
+
+            print(self.cycle_info)   # debug TODO delete
 
             save_data = list(zip(time_list, pos_data_list, data_list))  # Zusammenfügen der Daten
 
@@ -283,23 +285,24 @@ class SerialControlGUI:
                 # CSV-Datei speichern
                 with open(file_path, mode='w', newline='', encoding='utf-8') as file:
                     writer = csv.writer(file)
-                    writer.writerow(["Zeit [in ms]", "Weg [in mm]", "Kraft [in gramms]", "Info"])  # Header hinzufügen
+                    writer.writerow(["Zeit [in ms]", "Weg [in mm]", "Kraft [in gramms]", "Zykluszahl", "Zyklusart", "Feuchtigkeit [in %]", "Temp [in C]"])  # Header hinzufügen
 
                     cycle_index = 0
                     for row in save_data:
                         time_value = row[0]
-                        info = ' '  # Standardwert (leerer Platz)
+                        cycle_info = 'nan, nan, nan, nan'  # Standardwert (leerer Platz)
 
                         while cycle_index < len(cycle_list) and cycle_list[cycle_index][2] <= time_value:
                             cycle_index += 1
 
                         if cycle_index > 0:
-                            info = f"Cycle {int(cycle_list[cycle_index - 1][0])}: {cycle_list[cycle_index - 1][1]}"
+                            cycle_info = f"{int(cycle_list[cycle_index - 1][0])}: {cycle_list[cycle_index - 1][1]}"
 
-                        writer.writerow(list(row) + [info])
+                        writer.writerow(list(row) + [cycle_info])
 
                 return "Export erfolgreich!"  # Erfolgreich abgeschlossen
             else:
                 return "Export abgebrochen."  # Falls der Benutzer den Dialog abbricht
         except Exception as e:
+            print (f"Fehler: {str(e)}")
             return f"Fehler: {str(e)}"  # Gibt die Fehlermeldung zurück

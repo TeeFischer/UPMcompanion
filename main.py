@@ -110,16 +110,26 @@ def extract_cycle_value(data_string):
             # Extrahiere die Werte
             cycle_number = float(data_string.split("Press cycle:")[1].split(",")[0])
             time_value = float(data_string.split("Time:")[1].split()[0])
+            temperature_value = 'NaN'
+            humidity_value = 'NaN'
             if "Slow" in data_string:
+                print(data_string)
                 cycle_speed = "Slow"
+                humidity_value = float(data_string.split("Hum:")[1].split()[0])
+                temperature_value = float(data_string.split("Temp:")[1].split()[0])
             else:
                 cycle_speed = "Fast"
-            return cycle_number, cycle_speed, time_value
+
+            print(cycle_number, cycle_speed, time_value, temperature_value, humidity_value)   # TODO delete debug
+            return cycle_number, cycle_speed, time_value, temperature_value, humidity_value
         except ValueError:
             print("Cycle extract: Value Error!")
             # Wenn der Wert nicht umgewandelt werden kann, gib None zurück
             return None
-    print("Cycle Extraxt: not identified!")
+        except IndexError:
+            print(f"Error in: {data_string}")
+            return None
+    print("Cycle: not identified!")
     return None
 
 
@@ -135,7 +145,7 @@ def read_serial():
 
             if ser.in_waiting > 0:
                 decoded_data = ser.readline().decode('utf-8').strip()  # Daten empfangen und dekodieren
-                print(f"Empfangene Daten: {decoded_data}")  # Debug-Ausgabe
+                # print(f"Empfangene Daten: {decoded_data}")  # Debug-Ausgabe
 
                 # this catches the previously buffered communication which is not from this Arduino instance
                 if not startup:
