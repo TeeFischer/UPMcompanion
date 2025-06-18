@@ -1,5 +1,6 @@
 import serial
 import threading
+import re
 import time
 import serial.tools.list_ports
 from collections import deque
@@ -107,20 +108,18 @@ def extract_cycle_value(data_string):
     # (data_string)
     if "Press cycle:" in data_string:
         try:
-            # Extrahiere die Werte
-            cycle_number = float(data_string.split("Press cycle:")[1].split(",")[0])
-            time_value = float(data_string.split("Time:")[1].split()[0])
-            temperature_value = 'NaN'
-            humidity_value = 'NaN'
-            if "Slow" in data_string:
-                print(data_string)
-                cycle_speed = "Slow"
-                humidity_value = float(data_string.split("Hum:")[1].split()[0])
-                temperature_value = float(data_string.split("Temp:")[1].split()[0])
-            else:
-                cycle_speed = "Fast"
+            cycle_match = re.search(r"Press cycle:\s*([\d.]+)", data_string)
+            time_match = re.search(r"Time:\s*([\d.]+)", data_string)
+            temp_match = re.search(r"Temp:\s*([\d.]+)", data_string)
+            hum_match = re.search(r"Hum:\s*([\d.]+)", data_string)
 
-            print(cycle_number, cycle_speed, time_value, temperature_value, humidity_value)   # TODO delete debug
+            cycle_number = float(cycle_match.group(1)) if cycle_match else None
+            time_value = float(time_match.group(1)) if time_match else None
+            temperature_value = float(temp_match.group(1)) if temp_match else float('nan')
+            humidity_value = float(hum_match.group(1)) if hum_match else float('nan')
+
+            cycle_speed = "Slow" if "Slow" in data_string else "Fast"
+
             return cycle_number, cycle_speed, time_value, temperature_value, humidity_value
         except ValueError:
             print("Cycle extract: Value Error!")

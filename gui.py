@@ -290,15 +290,15 @@ class SerialControlGUI:
                     cycle_index = 0
                     for row in save_data:
                         time_value = row[0]
-                        cycle_info = 'nan, nan, nan, nan'  # Standardwert (leerer Platz)
+                        cycle_info = [None, None, None, None]  # Standardwert (leerer Platz)
 
                         while cycle_index < len(cycle_list) and cycle_list[cycle_index][2] <= time_value:
                             cycle_index += 1
 
                         if cycle_index > 0:
-                            cycle_info = f"{int(cycle_list[cycle_index - 1][0])}: {cycle_list[cycle_index - 1][1]}"
+                            cycle_info = [int(cycle_list[cycle_index - 1][0]), cycle_list[cycle_index - 1][1], cycle_list[cycle_index - 1][4], cycle_list[cycle_index - 1][3]]
 
-                        writer.writerow(list(row) + [cycle_info])
+                        writer.writerow(list(row) + list(cycle_info))
 
                 return "Export erfolgreich!"  # Erfolgreich abgeschlossen
             else:
