@@ -5,6 +5,7 @@ import time
 import serial.tools.list_ports
 from collections import deque
 import struct
+import zlib
 
 from gui import SerialControlGUI  # eigene gui.py Datei
 from graph import LiveGraph
@@ -29,6 +30,7 @@ position_data = deque()
 time_data = deque()
 cycle_info = deque()
 
+lost_lines = 0
 
 # Funktion zum Erkennen eines verfügbaren Arduinos
 def find_com_port():
@@ -89,19 +91,45 @@ def check_debug():
 
 def extract_load_cell_value(data_string):
     """Extrahiert den Load_cell-Wert aus einem String"""
-    # print(data_string)
-    if "Load:" in data_string:
-        try:
-            # Extrahiere den Wert nach "Load_cell: " und konvertiere ihn in eine float-Zahl
-            load_cell_value = float(data_string.split("Load:")[1].split()[0])
-            position_value = float(data_string.split("Pos:")[1].split()[0])
-            time_value = float(data_string.split("Time:")[1].split()[0])
-            return load_cell_value, position_value, time_value
-        except Exception as e:
-            print(f"Unerwarteter Fehler in extract_load_cell_value: {e}")  # Allgemeiner Fehler
-            print(data_string)
+    global lost_lines
+
+    # Gültigkeit prüfen
+    if not data_string.startswith("<") or not data_string.endswith(">"):
+        lost_lines += 1
+        print(f"Ungültige Zeile in extract_load_cell_value N°{lost_lines}:{data_string}")
+        return None
+    
+    # Start- und Endzeichen entfernen
+    data_string = data_string[1:-1]
+    
+
+    try:
+        # Split in Nutzdaten und Prüfsumme
+        *data_parts, checksum_hex = data_string.split(",")
+        if len(data_parts) != 3:
+            print("Ungültiger Dateninhalt")
             return None
-    return None
+
+        data_payload = ",".join(data_parts)
+        received_checksum = int(checksum_hex, 16)
+
+        # Prüfsumme berechnen
+        calculated_checksum = zlib.crc32(data_payload.encode('utf-8'))
+
+        if received_checksum != calculated_checksum:
+            print("Prüfsummenfehler!")
+            return None
+
+        # Werte extrahieren
+        load = float(data_parts[0])
+        position = float(data_parts[1])
+        timestamp = int(data_parts[2])
+
+        return load, position, timestamp
+
+    except Exception as e:
+        print(f"Fehler beim Parsen: {e}")
+        return None
 
 
 def extract_cycle_value(data_string):
@@ -136,18 +164,18 @@ def extract_cycle_value(data_string):
 # Funktion zum Empfangen von Daten vom Arduino, diese Funktion ist eine Endlosschleife, die daher in einem eigenen
 # Thread laufen sollte
 def read_serial():
-    global ser, startup
+    global ser, startup, lost_lines
     try:
         if ser is None or not ser.is_open:  # wenn noch keine Serielle verbindung besteht
             ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=None)
             print("Connection opened")
         while not stop_event.is_set():
-#            print(f"Queue: {ser.in_waiting}")  #Debugging: Das hier zeigt den Empfangsbuffer auf der PC Seite
+            print(f"Queue: {ser.in_waiting}")  #Debugging: Das hier zeigt den Empfangsbuffer auf der PC Seite
             
             arduino_connected(True)
 
             if ser.in_waiting > 0:
-                decoded_data = ser.readline().decode('utf-8').strip()  # Daten empfangen und dekodieren
+                decoded_data = ser.readline().decode('utf-8', errors='replace').strip()  # Daten empfangen und dekodieren
                 # print(f"Empfangene Daten: {decoded_data}")  # Debug-Ausgabe
 
                 # this catches the previously buffered communication which is not from this Arduino instance
@@ -158,7 +186,7 @@ def read_serial():
                     except Exception as e:
                         print(e)
 
-                elif decoded_data.startswith("Load"):
+                elif decoded_data.startswith("<"):
                     # Der String beginnt mit "Load:"
                     try:
                         values = extract_load_cell_value(decoded_data)
@@ -183,6 +211,8 @@ def read_serial():
                     cycle_info.append(extract_cycle_value(decoded_data))
                     gui.root.after(0, gui.display_incoming_data, decoded_data)
                 elif decoded_data:
+                    lost_lines += 1
+                    print(f"Ungültige Zeile in decoded_data N°{lost_lines}:{decoded_data}")
                     gui.root.after(0, gui.display_incoming_data, decoded_data)
             time.sleep(0.01)  # Kurze Pause, damit GUI responsive bleibt
     except serial.SerialException as e:
