@@ -66,7 +66,6 @@ def send_command(command):
             ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
         ser.write(command.encode())  # Befehl als Byte senden
         gui.display_send_data(command)
-        time.sleep(0.1)  # Kurze Pause, damit der Arduino den Befehl verarbeiten kann
     except serial.SerialException as e:
         arduino_connected(False, e)
 
@@ -214,7 +213,6 @@ def read_serial():
                     lost_lines += 1
                     print(f"Ungültige Zeile in decoded_data N°{lost_lines}:{decoded_data}")
                     gui.root.after(0, gui.display_incoming_data, decoded_data)
-            time.sleep(0.01)  # Kurze Pause, damit GUI responsive bleibt
     except serial.SerialException as e:
         arduino_connected(False, e)
 
