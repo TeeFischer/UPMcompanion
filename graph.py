@@ -24,5 +24,16 @@ class LiveGraph:
         self.ax.set_xlabel(current_xlabel)
         self.ax.set_ylabel(current_ylabel)
 
+        if len(data) > 0:
+            y_min_cutoff = -1000
+            y_min = min(data)  # Untergrenze fix
+            if y_min < y_min_cutoff:
+                y_min = y_min_cutoff
+            y_max = max(data) * 1.1  # etwas Puffer nach oben
+            self.ax.set_ylim(bottom=y_min, top=y_max)
+        else:
+            # Wenn keine positiven Werte vorhanden sind (z. B. am Anfang), setze feste Achse
+            self.ax.set_ylim(0, 1)
+
         # Plottet die übergebenen Daten
         self.ax.plot(data)
