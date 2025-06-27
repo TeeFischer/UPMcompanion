@@ -274,8 +274,6 @@ class SerialControlGUI:
             time_list = list(self.time_data)
             cycle_list = list(self.cycle_info)  # cycle_number, cycle_speed, time_value, temperature_value, humidity_value
 
-            print(self.cycle_info)   # debug TODO delete
-
             save_data = list(zip(time_list, pos_data_list, data_list))  # Zusammenfügen der Daten
 
             # Dialog zum Speichern der Datei öffnen

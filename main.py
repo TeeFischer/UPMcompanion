@@ -99,6 +99,7 @@ def extract_load_cell_value(data_string):
             return load_cell_value, position_value, time_value
         except Exception as e:
             print(f"Unerwarteter Fehler in extract_load_cell_value: {e}")  # Allgemeiner Fehler
+            print(data_string)
             return None
     return None
 
@@ -139,7 +140,10 @@ def read_serial():
     try:
         if ser is None or not ser.is_open:  # wenn noch keine Serielle verbindung besteht
             ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=None)
+            print("Connection opened")
         while not stop_event.is_set():
+#            print(f"Queue: {ser.in_waiting}")  #Debugging: Das hier zeigt den Empfangsbuffer auf der PC Seite
+            
             arduino_connected(True)
 
             if ser.in_waiting > 0:
