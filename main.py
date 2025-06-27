@@ -169,7 +169,8 @@ def read_serial():
             ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=None)
             print("Connection opened")
         while not stop_event.is_set():
-            print(f"Queue: {ser.in_waiting}")  #Debugging: Das hier zeigt den Empfangsbuffer auf der PC Seite
+            if ser.in_waiting > 1000:
+                print(f"Queue: {ser.in_waiting}")  #Debugging: Das hier zeigt den Empfangsbuffer auf der PC Seite
             
             arduino_connected(True)
 
