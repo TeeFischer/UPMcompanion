@@ -246,9 +246,26 @@ class SerialControlGUI:
                 error_label = tk.Label(export_window, text=result, fg="red")
                 error_label.pack(padx=10, pady=10)
 
+        def sos_export_button_click():
+            result = self.sos_save()  # Export ausführen und Rückmeldung erhalten
+
+            # Erfolgs- oder Fehlermeldung
+            if "Export erfolgreich" in result:
+                success_label = tk.Label(export_window, text=result, fg="green")
+                success_label.pack(padx=10, pady=10)
+
+                # Fenster nach einer kurzen Verzögerung schließen
+                export_window.after(2000, export_window.destroy)  # Schließt das Fenster nach 2 Sekunden
+            else:
+                error_label = tk.Label(export_window, text=result, fg="red")
+                error_label.pack(padx=10, pady=10)
+
         # Button zum Starten des Exports
         save_button = tk.Button(export_window, text="CSV exportieren", command=on_export_button_click)
         save_button.pack(padx=10, pady=10)
+
+        sos_save_button = tk.Button(export_window, text="SOS-Export", command=sos_export_button_click)
+        sos_save_button.pack(padx=10, pady=10)
 
     def export_data_old(self):
         print("Export started")
@@ -297,6 +314,46 @@ class SerialControlGUI:
                             cycle_info = [int(cycle_list[cycle_index - 1][0]), cycle_list[cycle_index - 1][1], cycle_list[cycle_index - 1][4], cycle_list[cycle_index - 1][3]]
 
                         writer.writerow(list(row) + list(cycle_info))
+
+                return "Export erfolgreich!"  # Erfolgreich abgeschlossen
+            else:
+                return "Export abgebrochen."  # Falls der Benutzer den Dialog abbricht
+        except Exception as e:
+            print (f"Fehler: {str(e)}")
+            return f"Fehler: {str(e)}"  # Gibt die Fehlermeldung zurück
+        
+    # Funktion zum notspeichern in txt Dateien, wenn der sichere Export fehlschlägt
+    def sos_save(self):
+        try:
+            # Kopiere die deques in Listen, um sicherzustellen, dass die originalen deques nicht verändert werden
+            pos_data_list = list(self.pos_data)
+            data_list = list(self.data)
+            time_list = list(self.time_data)
+            cycle_list = list(self.cycle_info)  # cycle_number, cycle_speed, time_value, temperature_value, humidity_value
+
+            save_data = list(zip(time_list, pos_data_list, data_list))  # Zusammenfügen der Daten
+
+            # Dialog zum Speichern der Datei öffnen
+            file_path = filedialog.asksaveasfilename(defaultextension=".txt", filetypes=[("Textdateien", "*.txt")])
+
+            print(file_path)
+
+            if file_path:
+                # CSV-Datei speichern
+                with open(file_path, mode='w') as file:
+                    for eintrag in save_data:
+                        line = ", ".join(map(str, eintrag))  # Tupel in String mit Komma trennen
+                        file.write(line + "\n")  # Jeden Eintrag in eine neue Zeile schreiben
+
+                # Finde die Position des letzten Punkts, um die Extension zu trennen
+                dot_index = file_path.rfind(".")
+                # "_2" vor der Extension einfügen
+                second_file_path = file_path[:dot_index] + "_2" + file_path[dot_index:]
+
+                with open(second_file_path, mode='w') as file:
+                    for eintrag in cycle_list:
+                        line = ", ".join(map(str, eintrag))  # Tupel in String mit Komma trennen
+                        file.write(line + "\n")  # Jeden Eintrag in eine neue Zeile schreiben
 
                 return "Export erfolgreich!"  # Erfolgreich abgeschlossen
             else:
