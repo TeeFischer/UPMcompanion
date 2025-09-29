@@ -91,7 +91,7 @@ class SerialControlGUI:
         button_clEstop = tk.Button(frame_buttons, text="Lösche E-Stop", command=lambda: self.send_command('e'))
         button_cal = tk.Button(frame_buttons, text="Waage kalibrieren", command=lambda: self.send_command('r'))
         button_tare = tk.Button(frame_buttons, text="Waage tarieren", command=lambda: self.send_command('t'))
-        button_scale = tk.Button(frame_buttons, text="Waage auslesen", command=lambda: self.send_command('a'))
+        button_scale = tk.Button(frame_buttons, text="Pressversuch (Kraftgest.)", command=lambda: self.send_command('k'))
         button_press = tk.Button(frame_buttons, text="Pressversuch (Weggest.)", command=lambda: self.send_command('p'))
         button_rel = tk.Button(frame_buttons, text="Bewege relativ um X", command=lambda: self.send_command('m'))
         button_fast = tk.Button(frame_buttons, text="Absolute Bewegung zu X", command=lambda: self.send_command('f'))

@@ -14,7 +14,7 @@ from graph import LiveGraph
 ser = None
 current_port = None
 BAUD_RATE = 115200
-backup_port = 'COM10'
+backup_port = 'COM9'
 
 startup = False
 

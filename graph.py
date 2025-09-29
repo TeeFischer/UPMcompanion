@@ -9,6 +9,7 @@ class LiveGraph:
         self.ax.set_title("Live Data")
         self.ax.set_xlabel(x_name)
         self.ax.set_ylabel(y_name)
+        self.ax.grid(True)
 
     def update(self, data):
         # Speichern der aktuellen Titel und Achsenbeschriftungen
@@ -23,9 +24,10 @@ class LiveGraph:
         self.ax.set_title(current_title)
         self.ax.set_xlabel(current_xlabel)
         self.ax.set_ylabel(current_ylabel)
+        self.ax.grid(True)
 
         if len(data) > 0:
-            y_min_cutoff = -1000
+            y_min_cutoff = -10000
             y_min = min(data)  # Untergrenze fix
             if y_min < y_min_cutoff:
                 y_min = y_min_cutoff
